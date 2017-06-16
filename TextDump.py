@@ -5,10 +5,11 @@ import hashlib
 import Tkinter
 from PIL import ImageTk, Image
 import tkMessageBox
+import findmyhash
 
 janela = Tkinter.Tk()
 janela.configure(background='white')
-janela.geometry("270x300")
+janela.geometry("350x300")
 janela.title("TextDump")
 
 binaryvar = textPlanovar = hexadecimalvar = decimalvar = base64evar = base32var = base16var = md5var = sha1var = None
@@ -41,6 +42,11 @@ class Tudo(object):
 			else:
 				i.configure(state='readonly')
 				i.update()
+
+			if tipo == self.md5:
+				self.botaomd5['state'] = 'normal'
+			else:
+				self.botaomd5['state'] = 'disable'
 
 		self.qual_tipo = qual_tipo
 
@@ -95,11 +101,20 @@ class Tudo(object):
 		md5var = Tkinter.StringVar()
 		md5 = Tkinter.Entry(janela, state="readonly", textvariable=md5var)
 		md5.grid(row=8, column=2)
+		Tkinter.Radiobutton(janela, var=tipo, background='white', command=lambda: self.mudar_uso(md5, textPlano, binary, hexadecimal, decimal,
+			base64e, base32, md5, sha1, iniciar), value=7).grid(row=8, column=3)
+		botaomd5 = Tkinter.Button(janela, text="Decriptar", command=lambda: Converter(md5.get()).md5(), state='disable')
+		botaomd5.grid(row=8, column=4)
+		self.botaomd5 = botaomd5
 
 		Tkinter.Label(janela, text="sha1: ", background='white').grid(row=9, column=1)
 		sha1var = Tkinter.StringVar()
 		sha1 = Tkinter.Entry(janela, state="readonly", textvariable=sha1var)
 		sha1.grid(row=9, column=2)
+		Tkinter.Radiobutton(janela, var=tipo, background='white', command=lambda: self.mudar_uso(sha1, textPlano, binary, hexadecimal, decimal,
+			base64e, base32, md5, sha1, iniciar), value=8).grid(row=9, column=3)
+		# iniciar = Tkinter.Button(janela, text="Decriptar", command=lambda: Converter(md5.get()).sha1())
+		# iniciar.grid(row=9, column=4)
 
 		self.textPlano = textPlano
 		self.textPlanovar = textPlano
@@ -142,6 +157,10 @@ class Tudo(object):
 			Converter(self.base64evar.get()).base64()
 		elif qual_tipo == 5:
 			Converter(self.base32.get()).base32()
+		elif qual_tipo == 6:
+			Converter(self.md5.get()).md5()
+		elif qual_tipo == 7:
+			Converter(self.sha1.get()).sha1()
 
 
 class Converter():
@@ -225,6 +244,25 @@ class Converter():
 			Converter(word).encrypt()
 		except:
 			tkMessageBox.showerror("Erro", "Valor inválido!")
+
+	def md5(self):
+		tkMessageBox.showwarning('Aviso', "O processo pode ser um pouco demorado, tenha paciência.")
+		
+		word = findmyhash.main('md5', self.gotit)
+
+		if not word:
+			tkMessageBox.showwarning("Aviso", "Hash nao encontrada em nenhuma database!")
+		else:
+			Converter(word).encrypt()
+
+	def sha1(self):
+		tkMessageBox.showwarning('Aviso', "O processo pode ser um pouco demorado, tenha paciência.")
+		word = findmyhash.main('sha1', self.gotit)
+
+		if word == 'bug':
+			tkMessageBox.showerror("Erro", "Um bug foi encontrado!\nContacte a bloglaxmarcaellugar@gmail.com para mais informações")
+
+		Converter(word).encrypt()
 
 Tudo().adicionar()
 
