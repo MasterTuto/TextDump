@@ -413,8 +413,6 @@ class CMD5:
 			if ':' in hashvalue:
 				hash2 = hashvalue.split(':')[1]
 
-		print hashvalue
-
 		
 		# Build the parameters
 		params = { "__EVENTTARGET" : "",
@@ -444,84 +442,6 @@ class CMD5:
 		found = soup.find_all(lambda tag: tag.get('id') == 'ctl00_ContentPlaceHolder1_LabelAnswer')[0].get_text()[:-14]
 		
 		return found if found else None
-
-class SANS:
-	
-	name = 		"sans"
-	url = 		"http://isc.sans.edu"
-	supported_algorithm = [MD5, SHA1]
-	
-	def isSupported (self, alg):
-		"""Return True if HASHCRACK can crack this type of algorithm and
-		False if it cannot."""
-		
-		if alg in self.supported_algorithm:
-			return True
-		else:
-			return False
-
-
-
-	def crack (self, hashvalue, alg):
-		"""Try to crack the hash.
-		@param hashvalue Hash to crack.
-		@param alg Algorithm to crack."""
-		
-		# Check if the cracker can crack this kind of algorithm
-		if not self.isSupported (alg):
-			return None
-		
-		# Build the URL
-		url = "http://isc.sans.edu/tools/reversehash.html"
-		
-		# Build the Headers with a random User-Agent
-		headers = { "User-Agent" : USER_AGENTS[randint(0, len(USER_AGENTS))-1] }
-		
-		# Build the parameters
-		response = requests.get( url, headers=headers )
-		html = None
-
-		if response:
-			html = response.text
-		else:
-			return None
-
-		soup = BeautifulSoup(html, 'html.parser')
-
-		match = soup.find_all(lambda tag: tag.get('name') == 'token')
-		print match
-		
-		token = ""
-		if match:
-			token = match.group().split('"')[5]
-		else:
-			return None
-		
-		params = { "token" : token,
-			   "text" : hashvalue,
-			   "word" : "",
-			   "submit" : "Submit" }
-		
-		# Build the Headers with the Referer header
-		headers["Referer"] = "http://isc.sans.edu/tools/reversehash.html"
-		
-		# Make the request
-		response = requests.post( url, data=params, headers=headers )
-		
-		# Analyze the response
-		html = None
-		if response:
-			html = response.text
-		else:
-			return None
-		
-		match = search (r'... hash [^\s]* = [^\s]*\s*</p><br />', html)
-		
-		if match:
-			print "hola mundo"
-			return match.group().split('=')[1][:-10].strip()
-		else:
-			return None #Nao completo
 
 class MD5DECRYPT:
 	
@@ -571,22 +491,14 @@ class MD5DECRYPT:
 			   "value" : hashvalue,
 			   "operation" : "MD5D" }
 		
+		url = "http://www.md5decrypt.org/index/process"
 		# Make the request
 		response = requests.post(url, data=params)
 
 		if response:
-			html = response.text
+			return dict(response.json())['body']
 		else:
 			return None
-		
-		match = search (r'12345678', html)
-		
-		if match:
-			print "hola mundo"
-			return match.group().split('=')[1][:-10].strip()
-		else:
-			print 'kk eae men'
-			return None # Nao completo
 
 class CLAVEY:
 	
@@ -653,14 +565,19 @@ class MD5DECODER:
 			return None
 		
 		# Build the URL
-		url = "http://md5decoder.org/%s" % (hashvalue)
-		response = requests.get(url)
+		url = "https://crackhash.com/"
+
+		params = {
+			'hash': hashvalue,
+			'crack': 'crack'
+		}
+
+		response = requests.post(url, data=params)
 		html = response.text
 
 		soup = BeautifulSoup(html, 'html.parser')
-		divs = soup.find_all('h1')
-		
-		return divs[0].get_text().split()[0]
+
+		return soup.find_all('center')[0].get_text().split()[-1]
 
 
 CRAKERS = [
@@ -669,6 +586,7 @@ CRAKERS = [
 		MD5DECRYPTION,
 		HASHCRACK,
 		CMD5,
+		MD5DECRYPT,
 		CLAVEY,
 		MD5DECODER]
 
@@ -850,7 +768,6 @@ def crackHash (algorithm, hashvalue=None, hashfile=None):
 				result = cr.crack ( activehash, algorithm )
 			# If it was some trouble, exit
 			except:
-				print "\nSomething was wrong. Please, contact with us to report the bug:\n\nbloglaxmarcaellugar@gmail.com\n"
 				continue
 			
 			# If there is any result...
